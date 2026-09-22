@@ -32,6 +32,14 @@ answer lives so step 4's grouping is already done. These are the skill's own
 checklists, not a fallback for when the user forgot to bring one — running
 against them *is* the default way this skill operates.
 
+The five security-flavored lists split into two tiers (see step 1's ask):
+`launch-security-checklist.md` (30) and `agent-security-checklist.md` (64)
+are the default "security audit" — 94 items, tested end-to-end on a real
+project without becoming a marathon. `extended-attack-domains.md` (90),
+`model-knowledge-additions.md` (8), and `community-findings-checklist.md`
+(16) are the "deep audit" add-on — 208 items total, meaningfully heavier and
+opt-in rather than the default.
+
 - `references/launch-security-checklist.md` — the 30-item pre-launch web-app
   security list: the original 20-item meme list (HSTS, CSRF tokens, prompt
   injection, payment webhooks, …) plus 10 added items covering common gaps
@@ -116,10 +124,20 @@ list in the same session, check overlapping items once and reuse the citation
    `AskUserQuestion` (allow multiple selection) to let the user pick.
    Pre-select nothing — recommend in the option description, don't decide for
    them:
-   - "Security audit (recommended for most asks)" — the 30 + 64 + 90 + 8 + 16
-     lists together (the 90-item list's own architecture-gated domains still get
-     ruled in/out individually during investigation, not skipped wholesale;
-     the 8-item list gets extra skepticism per its own provenance warning)
+   - "Security audit (recommended for most asks)" — just the 30 + 64 lists
+     (94 items). This is the default weight: enough to catch real gaps without
+     the run turning into a marathon. A live test on a real ~30-item run alone
+     took a meaningful amount of investigation; running all five security
+     lists (208 items) by default made the "just audit my project" case too
+     heavy, so the wider lists moved to their own tier below.
+   - "Deep security audit" — adds `extended-attack-domains.md` (90),
+     `model-knowledge-additions.md` (8), and `community-findings-checklist.md`
+     (16) on top of the 94 above (208 items total). Note in the option
+     description that this is significantly heavier and better suited to a
+     dedicated security review than a quick check — the 90-item list's
+     architecture-gated domains still get ruled in/out individually during
+     investigation, not skipped wholesale, and the 8-item list gets extra
+     skepticism per its own provenance warning.
    - "General engineering audit" — the default-checklist
    - "Full backend/systems audit" — the 111-item list, note it's mostly
      infra concepts and often heavily "not applicable" on small projects
