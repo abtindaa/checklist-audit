@@ -1,20 +1,24 @@
 # checklist-audit
 
-A [Claude Code](https://claude.com/claude-code) skill that audits a project
-against real checklists — checked against the actual code, not answered from
-general knowledge.
+A [Claude Code](https://claude.com/claude-code) skill for security and
+best-practices audits. It's a `SKILL.md` file (plus reference checklists)
+that you drop into Claude Code so it knows how to run this kind of audit
+consistently, instead of you re-explaining it every time.
 
-No list from you is required. Say something like "security audit this
-project" and the skill runs its own built-in checklists. You can also paste
-or show your own checklist/image and it takes priority for that run.
+**What it does:** you ask Claude Code to audit your project — for security
+gaps, or against general engineering best practices — and it checks each
+item against your actual source code (grep, read the real file, find the
+real enforcement point), not from general training knowledge. Every result
+comes with a `file:line` citation or an explicit "couldn't verify this."
 
-## Why
+**What problem this solves:** an LLM asked "do we have rate limiting on
+password reset?" from memory will confidently say yes or no either way, and
+a wrong "yes" is a security hole that never gets found. This skill's rule is
+simple: no citation, no "already have."
 
-Asking an LLM "do we have CSRF protection" from memory is worse than useless
-— every answer sounds plausible, and a wrong "yes we have that" is a security
-hole that never gets found. This skill's rule: every verdict must be backed by
-something actually read during that run (a grep hit, a file, a config line).
-Anything it can't point to goes in "unverified," never in "already have."
+You don't need to bring your own checklist. Say "security audit this
+project" and it runs its own built-in checklists (see below). You can also
+paste or show your own checklist/image, which takes priority for that run.
 
 ## What's bundled
 
