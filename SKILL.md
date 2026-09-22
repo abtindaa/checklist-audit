@@ -1,6 +1,6 @@
 ---
 name: checklist-audit
-description: Audit this project for real, using built-in checklists — a 30-item pre-launch security list, a 64-item Cloudflare attack-pattern list, a 90-item extended attack-domain list, a 111-item backend/distributed-systems list, and a general engineering list — checked against the actual code, not general knowledge. No list from the user is required; a pasted or shown checklist/image is also accepted and takes priority when given. Produces a grounded triage: already implemented (file:line proof), a genuine gap, unverified, or not applicable given this project's real architecture. Use whenever the user asks for a security audit or review ("security audit this project", "پروژه رو از نظر امنیتی چک کن", "چی از نظر امنیتی کم داریم"), a general best-practices audit ("چک کن چی کم داریم", "which of these do we need"), or pastes/shows their own list ("do we have this") — even without naming this skill. Do NOT use for a specific diff or PR (use code-review) — this audits the whole project.
+description: Audit this project for real, using built-in checklists — a 38-item pre-launch security list, a 64-item Cloudflare attack-pattern list, a 90-item extended attack-domain list, a 111-item backend/distributed-systems list, and a general engineering list — checked against the actual code, not general knowledge. No list from the user is required; a pasted or shown checklist/image is also accepted and takes priority when given. Produces a grounded triage: already implemented (file:line proof), a genuine gap, unverified, or not applicable given this project's real architecture. Use whenever the user asks for a security audit or review ("security audit this project", "پروژه رو از نظر امنیتی چک کن", "چی از نظر امنیتی کم داریم"), a general best-practices audit ("چک کن چی کم داریم", "which of these do we need"), or pastes/shows their own list ("do we have this") — even without naming this skill. Do NOT use for a specific diff or PR (use code-review) — this audits the whole project.
 ---
 
 # Checklist audit
@@ -27,26 +27,27 @@ step 1).
 
 ## Bundled lists
 
-Seven lists are pre-loaded under `references/`, all pre-grouped by where the
+Six lists are pre-loaded under `references/`, all pre-grouped by where the
 answer lives so step 4's grouping is already done. These are the skill's own
 checklists, not a fallback for when the user forgot to bring one — running
 against them *is* the default way this skill operates.
 
-The five security-flavored lists split into two tiers (see step 1's ask):
-`launch-security-checklist.md` (30) and `agent-security-checklist.md` (64)
-are the default "security audit" — 94 items, tested end-to-end on a real
-project without becoming a marathon. `extended-attack-domains.md` (90),
-`model-knowledge-additions.md` (8), and `community-findings-checklist.md`
-(16) are the "deep audit" add-on — 208 items total, meaningfully heavier and
-opt-in rather than the default.
+The four security-flavored lists split into two tiers (see step 1's ask):
+`launch-security-checklist.md` (38) and `agent-security-checklist.md` (64)
+are the default "security audit" — 102 items, tested end-to-end on a real
+project without becoming a marathon. `extended-attack-domains.md` (90) and
+`community-findings-checklist.md` (16) are the "deep audit" add-on — 208
+items total, meaningfully heavier and opt-in rather than the default.
 
-- `references/launch-security-checklist.md` — the 30-item pre-launch web-app
+- `references/launch-security-checklist.md` — the 38-item pre-launch web-app
   security list: the original 20-item meme list (HSTS, CSRF tokens, prompt
-  injection, payment webhooks, …) plus 10 added items covering common gaps
+  injection, payment webhooks, …) plus 18 added items covering common gaps
   (IDOR/authorization, path traversal, MFA, secrets in git history, dependency
-  scanning, log redaction, …). Narrower and more concrete than the systems
-  list; every item has a real enforcement point to grep for. Under the
-  subagent threshold — direct group-by-group investigation.
+  scanning, log redaction, password hashing, mass assignment, GraphQL
+  introspection, dependency slopsquatting, unsandboxed AI coding agents,
+  responsible-disclosure path, …). Narrower and more concrete than the
+  systems list; every item has a real enforcement point to grep for. Under
+  the subagent threshold — direct group-by-group investigation.
 - `references/agent-security-checklist.md` — the 64-item attack-pattern
   checklist sourced from Cloudflare's `security-audit-skill`, not a meme list.
   Most items are patterns to trace through actual data flow ("follow untrusted
@@ -79,16 +80,6 @@ opt-in rather than the default.
   with no security framing and no list of the user's own. Themed groups exist
   only to make investigation efficient; the output is still the skill's normal
   flat four-bucket format, not grouped by theme.
-- `references/model-knowledge-additions.md` — 8 items (dependency
-  slopsquatting, an unsandboxed coding agent reaching production
-  credentials/data, mass assignment, GraphQL introspection/query cost, weak
-  password hashing, missing responsible-disclosure path, unsandboxed
-  model-generated code execution, no breached-password check) that came from
-  the model's own training knowledge, not a document anyone read — unlike the
-  other five lists. Treat these with more skepticism during step 5: they're
-  hypotheses to check, and "doesn't really apply here" is an expected,
-  legitimate outcome, not a failure. Always run alongside the security lists
-  during a security audit; skip for a purely general-engineering audit.
 - `references/community-findings-checklist.md` — 16 items from the user's own
   review of real practitioner discussions (agent-memory secret leaks, MCP
   credential exposure, misplaced content guards, approval gates after the
@@ -97,12 +88,11 @@ opt-in rather than the default.
   reconcatenated SQL inside a DB function, per-process rate limits behind a
   multi-replica LB, spoofable client-IP trust, debug libraries dumping locals
   into logs, silent-skip artifact signing, unreviewed agent-skill installs).
-  A third distinct provenance tier: more concrete/real-incident-grounded than
-  `model-knowledge-additions.md`, but still not a single vetted document —
-  verify the specific mechanism against this project's actual stack, since an
-  item naming a specific framework may simply not apply here.
+  Not a single vetted document like Cloudflare's skill — verify the specific
+  mechanism against this project's actual stack, since an item naming a
+  specific framework may simply not apply here.
 
-All seven lists supply *items*, never verdicts: every item still goes through
+All six lists supply *items*, never verdicts: every item still goes through
 step 5, and on a small single-server project a large fraction of the systems
 list in particular is correctly "not applicable." When running more than one
 list in the same session, check overlapping items once and reuse the citation
@@ -116,28 +106,25 @@ list in the same session, check overlapping items once and reuse the citation
    anything else, don't touch the bundled lists.
 
    **Otherwise, before doing anything else, explain the bundled lists and ask
-   which to run.** Briefly state in the chat that this skill ships seven
-   built-in checklists rather than needing one from the user, name them (30-item
-   pre-launch security, 64-item Cloudflare attack-pattern list, 90-item
-   extended attack-domain list, 8-item model-knowledge list, 16-item community
-   findings list, 111-item backend/systems, general engineering), and use
-   `AskUserQuestion` (allow multiple selection) to let the user pick.
-   Pre-select nothing — recommend in the option description, don't decide for
-   them:
-   - "Security audit (recommended for most asks)" — just the 30 + 64 lists
-     (94 items). This is the default weight: enough to catch real gaps without
-     the run turning into a marathon. A live test on a real ~30-item run alone
-     took a meaningful amount of investigation; running all five security
-     lists (208 items) by default made the "just audit my project" case too
+   which to run.** Briefly state in the chat that this skill ships six
+   built-in checklists rather than needing one from the user, name them
+   (38-item pre-launch security, 64-item Cloudflare attack-pattern list,
+   90-item extended attack-domain list, 16-item community findings list,
+   111-item backend/systems, general engineering), and use `AskUserQuestion`
+   (allow multiple selection) to let the user pick. Pre-select nothing —
+   recommend in the option description, don't decide for them:
+   - "Security audit (recommended for most asks)" — just the 38 + 64 lists
+     (102 items). This is the default weight: enough to catch real gaps
+     without the run turning into a marathon. A live test on a real 30-item
+     run alone took a meaningful amount of investigation; running all the
+     security lists by default made the "just audit my project" case too
      heavy, so the wider lists moved to their own tier below.
-   - "Deep security audit" — adds `extended-attack-domains.md` (90),
-     `model-knowledge-additions.md` (8), and `community-findings-checklist.md`
-     (16) on top of the 94 above (208 items total). Note in the option
-     description that this is significantly heavier and better suited to a
-     dedicated security review than a quick check — the 90-item list's
-     architecture-gated domains still get ruled in/out individually during
-     investigation, not skipped wholesale, and the 8-item list gets extra
-     skepticism per its own provenance warning.
+   - "Deep security audit" — adds `extended-attack-domains.md` (90) and
+     `community-findings-checklist.md` (16) on top of the 102 above (208
+     items total). Note in the option description that this is significantly
+     heavier and better suited to a dedicated security review than a quick
+     check — the 90-item list's architecture-gated domains still get ruled
+     in/out individually during investigation, not skipped wholesale.
    - "General engineering audit" — the default-checklist
    - "Full backend/systems audit" — the 111-item list, note it's mostly
      infra concepts and often heavily "not applicable" on small projects

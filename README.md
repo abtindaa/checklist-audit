@@ -24,13 +24,18 @@ paste or show your own checklist/image, which takes priority for that run.
 
 | File | Items | Source |
 |---|---|---|
-| `references/launch-security-checklist.md` | 30 | pre-launch web-app security meme list + additions |
+| `references/launch-security-checklist.md` | 38 | pre-launch web-app security meme list + additions |
 | `references/agent-security-checklist.md` | 64 | Cloudflare's [security-audit-skill](https://github.com/cloudflare/security-audit-skill) (core + AI/LLM) |
 | `references/extended-attack-domains.md` | 90 | the rest of Cloudflare's security-audit-skill (web/auth, client-side, cloud, supply-chain, availability, data isolation, protocols, desktop/mobile) |
-| `references/model-knowledge-additions.md` | 8 | model's own training knowledge — flagged with lower confidence |
 | `references/community-findings-checklist.md` | 16 | real practitioner-reported patterns |
 | `references/systems-checklist.md` | 111 | backend/distributed-systems meme list |
 | `references/default-checklist.md` | ~100 | general engineering best practices, no security framing |
+
+The security lists split into two tiers: a "security audit" default
+(launch-security + agent-security, 102 items) and an opt-in "deep audit"
+(adds extended-attack-domains + community-findings, 208 items total) — a
+live test showed running everything by default was too heavy for a quick
+ask.
 
 Output is always four buckets: already covered (with `file:line` proof),
 genuinely worth fixing, unverified, or not applicable (with the specific

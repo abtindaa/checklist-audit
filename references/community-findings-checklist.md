@@ -1,10 +1,9 @@
 # Community findings checklist (16 items)
 
-**Provenance:** distinct from every other bundled list. Not from a vetted
-single source like Cloudflare's `security-audit-skill`, and not from the
-model's own training knowledge like `model-knowledge-additions.md` — these
-came from the user's own review of real practitioner discussions (~150 posts
-across security-related community tags). Each item below reflects an actual
+**Provenance:** distinct from every other bundled list — not from a vetted
+single source like Cloudflare's `security-audit-skill`. These items came from
+the user's own review of real practitioner discussions (~150 posts across
+security-related community tags). Each item below reflects an actual
 reported incident or pattern, not a document anyone here re-read directly, so
 treat them the way you'd treat a tip from a colleague: plausible and worth
 checking, but verify the specific mechanism against this project's actual
