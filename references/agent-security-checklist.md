@@ -148,10 +148,13 @@ more than one of these lists gets audited in the same session, check baseline
 exposures (group 1) and injection (group 2) once and reuse the citation across
 lists instead of re-deriving it.
 
-Group 10 is the one most likely to get a lazy "not applicable" — check for an
-LLM integration honestly (an SDK import, an API key for a model provider, a
-prompt-template file) before ruling it out, since "we don't have a chatbot" can
-still mean an agent framework or MCP integration hiding a few files deep.
+Group 10 is the one most likely to get a lazy "not applicable" — and in real
+runs it did, twice, on the same project. The app called an LLM over plain
+HTTP (no SDK in the dependency file), so a package grep found nothing. Before
+ruling it out, grep the *code*: `completions`, `chat`, `prompt`, `model=`,
+`AI_`/`LLM_` env vars, provider hostnames, and any `*_ai_*`/`*summary*`
+service files. "We don't have a chatbot" can still mean an AI summary
+feature, an agent framework, or an MCP integration a few files deep.
 
 Items 43–48 (feature abuse) require thinking about the codebase's actual
 features, not a generic scan — read the note in `ATTACK-CLASSES.md`'s wildcard

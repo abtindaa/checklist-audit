@@ -217,19 +217,49 @@ list in the same session, check overlapping items once and reuse the citation
      project's own deployment docs, docker-compose / CI / IaC files
 
 6. **Verify every gap yourself before reporting it.** A subagent's summary is
-   what it intended to find, not proof. For each item headed for "worth
-   fixing", open the cited `file:line` and confirm the code says what the
-   claim says — the missing check really is missing, the bypass path really
-   reaches the sink. A gap you couldn't re-confirm drops to "unverified."
-   Spot-check a few "covered" citations too; if one is wrong, re-check that
-   agent's whole batch. Gaps are what the user will spend engineering time
-   on, so they get the highest bar.
+   what it intended to find, not proof — and a `file:line` citation proves it
+   read *a* line, not enough of them. In a real run, 3 of 6 reported gaps were
+   wrong, and the most confidently worded one (ranked highest) was one of
+   them. For each item headed for "worth fixing", don't just re-read the cited
+   line; prove the protection is absent along the *whole path*:
+   - **The rest of the function and its callers.** The missed check was in
+     the loop directly below the cited query filter.
+   - **Other layers.** Decorators, middleware, and the reverse-proxy config.
+     A "spoofable header" finding was false because nginx overwrites that
+     header before the app ever sees it.
+   - **Intent.** A `force_`/override-named path, a confirmation step in the
+     UI, a dedicated audit-log action, or a commit message explaining it
+     means "deliberate." Check before calling it a defect.
+   - **Details you're quoting.** Column widths, line numbers, which model is
+     input and which is response — one real report got three of these wrong.
+
+   A gap you couldn't re-confirm this way drops to "unverified." Spot-check a
+   few "covered" citations too; if one is wrong, re-check that agent's whole
+   batch. Gaps are what the user will spend engineering time on, so they get
+   the highest bar.
+
+   **Check proposed fixes against real data before recommending them.** A
+   "make quantity numeric" fix would have rejected 175 valid live rows,
+   because `/` is the Persian decimal separator. Before suggesting a new
+   constraint, look at what the existing values actually are (sample the
+   data, or the fixtures/seed if there's no DB access) and at locale
+   conventions. Apply validation to input schemas, never to response models —
+   on a response model it stops the API serving rows that already exist.
 
 7. **Sort into exactly four buckets.** An item can only end up in "not
    applicable" if you can name the specific architectural fact that makes it
    so (e.g. "no self-service password reset flow exists — admin resets
    directly" is a real reason; "we're small" is not, by itself, unless the
-   project's own docs treat scale as a settled decision). Anything you ran out
+   project's own docs treat scale as a settled decision). Prove the absence by
+   searching for the *behavior*, not the package name. Two separate runs
+   marked the whole AI/LLM group N/A because no `openai`/`anthropic`/
+   `langchain` package was installed — but the app called an LLM provider
+   over plain HTTP from `ai_summary_service.py`. A subagent in one of those
+   runs had even mentioned that file's `AI_ENABLED` flag, and nobody
+   connected it. Grep the code for the behavior (`completions`, `prompt`,
+   `model=`, `AI_`/`LLM_` env vars, provider hostnames; `upload`/`multipart`
+   for file handling; `requests.`/`httpx`/`urllib` for outbound calls), and
+   re-check any N/A that another agent's output contradicts. Anything you ran out
    of budget on, couldn't locate, or only half-confirmed goes in "unverified"
    with the specific open question — that bucket existing is what keeps the
    other three honest, so leaving it empty is only correct when it's true.
