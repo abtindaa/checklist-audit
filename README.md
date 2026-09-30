@@ -72,3 +72,7 @@ what best practices are we missing
 Or paste/show your own checklist and ask "do we have this."
 
 See [SKILL.md](SKILL.md) for the full workflow and decision logic.
+
+## License
+
+MIT — see [LICENSE](LICENSE). The two Cloudflare-derived lists keep Cloudflare's MIT copyright notice.

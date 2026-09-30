@@ -138,7 +138,11 @@ list in the same session, check overlapping items once and reuse the citation
 
 2. **Parse whichever list is now selected.** If the source is an image, read
    it fully, don't paraphrase from a glance. Number the items if they aren't
-   already.
+   already. When more than one list runs in the same audit, give every item a
+   list prefix so numbers can't collide in the report — `L-` launch-security,
+   `A-` agent-security, `E-` extended-attack-domains, `C-` community-findings,
+   `S-` systems, `D-` default, `U-` the user's own list (so `L-26` and `A-26`
+   are unambiguous). A single-list run keeps plain numbers.
 
 3. **Load project context first.** Before checking anything, find out what this
    project actually is: its stack, its architecture, its binding constraints,
@@ -152,6 +156,17 @@ list in the same session, check overlapping items once and reuse the citation
    (or whatever it actually is here) — not because Kubernetes items are
    generically skippable everywhere.
 
+   Also look specifically for **earlier audits and recorded decisions**:
+   `docs/security*`, `SECURITY.md`, `docs/*review*`, `docs/*audit*`, a
+   decision log, and any comment or doc that records an owner's deliberate
+   choice to accept a risk. Read them before investigating. They tell you
+   which gaps are already known (report those as "still open since <date>",
+   not as a new discovery), which were fixed (verify the fix is still in the
+   code — fixes regress), and which risks were deliberately accepted (see
+   step 7). An audit that re-reports last month's known finding as new, or
+   flags an owner-accepted trade-off as a bug, costs the user trust in every
+   other line of the report.
+
 4. **Plan the investigation against the list's size.** Count the items first.
    - **Up to ~15 items:** investigate each one directly, in whatever order is
      cheapest.
@@ -162,9 +177,25 @@ list in the same session, check overlapping items once and reuse the citation
      audit stays legible.
    - **More than ~40, or groups that need deep independent digging:** dispatch
      the groups to parallel `Explore` subagents, one group per agent, each with
-     the project-context summary from step 3 and its own item numbers. Require
-     each agent to return `file:line` citations; an agent that reports a verdict
-     with no citation gets its items placed in "unverified," not "already have."
+     the project-context summary from step 3 (including any prior-audit and
+     accepted-risk findings) and its own item IDs. Require each agent to return
+     `file:line` citations; an agent that reports a verdict with no citation
+     gets its items placed in "unverified," not "already have."
+
+     Give every agent the same fixed verdict vocabulary and return shape, or
+     their answers won't merge — in a real run, one agent used "confirmed" to
+     mean "safe" and another used it to mean "vulnerable." Paste this into
+     each prompt:
+
+     ```
+     For each item, return exactly one line:
+     <ID> | <COVERED|GAP|UNVERIFIED|N/A> | <one-sentence fact> | <file:line or "none">
+     COVERED = the protection exists and you read the enforcement point.
+     GAP = the protection is missing or bypassable; name the path.
+     UNVERIFIED = you couldn't settle it; say exactly what's missing.
+     N/A = the surface doesn't exist; name the architectural fact.
+     Don't use "confirmed", "safe", "OK" or "not found" as verdicts.
+     ```
 
 5. **Investigate every item for real.** For each item, form a concrete question
    ("is there a rate limit on X route", "does the User model have a lockout
@@ -185,7 +216,16 @@ list in the same session, check overlapping items once and reuse the citation
    - Infra items (TLS, CORS, backups, permissions) → deploy configs, the
      project's own deployment docs, docker-compose / CI / IaC files
 
-6. **Sort into exactly four buckets.** An item can only end up in "not
+6. **Verify every gap yourself before reporting it.** A subagent's summary is
+   what it intended to find, not proof. For each item headed for "worth
+   fixing", open the cited `file:line` and confirm the code says what the
+   claim says — the missing check really is missing, the bypass path really
+   reaches the sink. A gap you couldn't re-confirm drops to "unverified."
+   Spot-check a few "covered" citations too; if one is wrong, re-check that
+   agent's whole batch. Gaps are what the user will spend engineering time
+   on, so they get the highest bar.
+
+7. **Sort into exactly four buckets.** An item can only end up in "not
    applicable" if you can name the specific architectural fact that makes it
    so (e.g. "no self-service password reset flow exists — admin resets
    directly" is a real reason; "we're small" is not, by itself, unless the
@@ -194,13 +234,25 @@ list in the same session, check overlapping items once and reuse the citation
    with the specific open question — that bucket existing is what keeps the
    other three honest, so leaving it empty is only correct when it's true.
 
-7. **Record the confirmed findings.** Append the audit's durable conclusions —
-   the confirmed gaps, and the non-obvious "we already have this, here's where"
-   facts — to whatever the project uses as its source of truth (`CLAUDE.md`,
-   the architecture doc, an issue tracker if the user prefers). Date them and
-   cite the files. Without this, the next session re-derives the same answers
-   from scratch and step 3's grep for prior findings has nothing to find. Skip
-   only if the user asked for a throwaway answer.
+   **Deliberately accepted risks** (found in step 3 — an owner decision
+   written down in a doc, decision log, or code comment) go in "not
+   applicable" with the reason `accepted risk — <where it's recorded>`, not in
+   "worth fixing." Two exceptions make it a gap again: the recorded reasoning
+   depends on a premise that's no longer true (e.g. "fine while there's only
+   one tenant" in a codebase that now has several), or the doc says the
+   acceptance was temporary and its condition has passed. Then report it as a
+   gap and quote the original decision.
+
+8. **Record the findings the way the project already does.** If the project
+   has an established place for audit results (e.g. `docs/security-*.md`,
+   `SECURITY.md`, an issue tracker), write there in the same naming and
+   format. Otherwise append the durable conclusions — confirmed gaps, and the
+   non-obvious "we already have this, here's where" facts — to its source of
+   truth (`CLAUDE.md`, the architecture doc). Date them and cite the files.
+   Without this, the next session re-derives the same answers from scratch
+   and step 3 has nothing to find. Skip only if the user asked for a
+   throwaway answer. When writing a report file, use the report format under
+   "Output format" below.
 
 ## Output format
 
@@ -242,6 +294,23 @@ not a restated summary of everything, just the actual next action.
 Keep it in normal prose register, not compressed slang — this is content the
 user has to act on precisely, same as a code review or security finding.
 
+### Report file (when one is written — step 8, or the user asks for one)
+
+The chat summary is one line per item; a report file is what someone fixes
+from later, so each gap gets enough to act on without re-running the audit.
+Follow the project's own existing report format if it has one. Otherwise:
+
+- A header: date, which lists ran (with IDs), how the investigation was
+  split, and counts per bucket.
+- One section per gap, ordered by priority: what's wrong with `file:line`
+  evidence, the concrete impact (who can do what to whom), the fix — pointing
+  at a pattern the codebase already uses correctly elsewhere when there is
+  one — and "still open since <date>" if an earlier audit already knew.
+- A short "unverified" list with the exact fact needed to settle each.
+- Covered and N/A items only as counts plus a note on request, unless the
+  user wants the full record — a report padded with passes buries the gaps.
+- A closing line: fix order and why.
+
 ## Things that go wrong if you skip the investigation step
 
 - Claiming a feature is "standard so probably fine" when the actual code has a
@@ -255,6 +324,9 @@ user has to act on precisely, same as a code review or security finding.
   the project's own docs show the identical risk already happened at small
   scale (a real un-alerted outage, a real near-miss) — scale is not a reason to
   skip, only architecture is.
+- Passing a subagent's "gap" straight into the report without opening the
+  cited line. The subagent read the code once, under a word limit; the user
+  will act on the report. Step 6 exists because the two are not the same bar.
 - Padding the "already have" bucket to look thorough. A short, confident, well-
   cited list beats a long one where half the citations are guesses — and
   "unverified" is always available for the ones you couldn't nail down.
