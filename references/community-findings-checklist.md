@@ -37,7 +37,12 @@ publishes autonomously.
 4. **Human-approval gate placed after the side effect, not before it** — e.g.
    a terminal command runs and *then* asks for confirmation, or confirmation
    arrives after the mutation is already committed. The gate has to block
-   execution, not just report on it.
+   execution, not just report on it. The worst form is no gate at all: check
+   the agent's permission allowlist (`.claude/settings*.json`,
+   `settings.local.json`) for wildcard entries that auto-approve commands
+   against production (e.g. `Bash(ssh ... prod-host '... python -c *)`).
+   A secret-looking value inside such an entry may be the harness's own
+   placeholder (`__CMDSUB_OUTPUT__`) — check before calling it a leak.
 5. **An autonomous "publish" agent lacking a pre-send leak-scan gate** — an
    agent that posts directly to a public knowledge base, wiki, or docs site
    with no check for internal-only context (credentials, other users' data,
@@ -99,9 +104,13 @@ Applies to projects using row-level security or raw SQL functions.
 
 15. **A debug/logging library configured to dump local variables into
     tracebacks or logs** (e.g. `rich(show_locals=True)`, verbose `structlog`
-    configs) — prints the contents of every local variable in a crashing
+    configs, and — easy to miss because it's the *default* — loguru, whose
+    `diagnose` is `True` unless `logger.add(..., diagnose=False)` or
+    `LOGURU_DIAGNOSE=0` is set; also check that the default stderr sink was
+    removed) — prints the contents of every local variable in a crashing
     frame, including ones that only ever held a secret in memory and were
-    never meant to be logged.
+    never meant to be logged. Trace one concrete path: an `exc_info=True` /
+    `logger.exception` call in a frame whose locals hold a key or password.
 16. **Unattended artifact/release signing silently skips signing when the
     signing credential is missing**, instead of failing the build. Produces
     an unsigned artifact that looks like a normal release output.
