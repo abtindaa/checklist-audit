@@ -1,54 +1,90 @@
 # checklist-audit
 
-A [Claude Code](https://claude.com/claude-code) skill for security and
-best-practices audits. It's a `SKILL.md` file (plus reference checklists)
-that you drop into Claude Code so it knows how to run this kind of audit
-consistently, instead of you re-explaining it every time.
+**A security audit skill for vibe-coded projects.** A
+[Claude Code](https://claude.com/claude-code) skill that checks your project
+against more than 200 built-in security items, focused on the issues that most
+often affect AI-assisted codebases. It checks the actual code, not general
+knowledge, and every covered item comes with a `file:line` citation.
 
-**What it does:** you ask Claude Code to audit your project — for security
-gaps, or against general engineering best practices — and it checks each
-item against your actual source code (grep, read the real file, find the
-real enforcement point), not from general training knowledge. Every result
-comes with a `file:line` citation or an explicit "couldn't verify this."
+## Why
 
-**What problem this solves:** an LLM asked "do we have rate limiting on
-password reset?" from memory will confidently say yes or no either way, and
-a wrong "yes" is a security hole that never gets found. This skill's rule is
-simple: no citation, no "already have."
+Ask an LLM "do we have rate limiting on password reset?" and it will answer
+confidently either way. A wrong "yes" is a security hole that never gets
+found. This skill has one rule: **no citation, no "already have."** Anything
+it can't prove from the code is reported as unverified, not assumed safe.
 
-You don't need to bring your own checklist. Say "security audit this
-project" and it runs its own built-in checklists (see below). You can also
-paste or show your own checklist/image, which takes priority for that run.
+## What it checks
 
-## What's bundled
+You don't need to bring a checklist — the skill ships its own:
 
 | File | Items | Source |
 |---|---|---|
-| `references/launch-security-checklist.md` | 38 | pre-launch web-app security meme list + additions |
-| `references/agent-security-checklist.md` | 64 | Cloudflare's [security-audit-skill](https://github.com/cloudflare/security-audit-skill) (core + AI/LLM) |
-| `references/extended-attack-domains.md` | 90 | the rest of Cloudflare's security-audit-skill (web/auth, client-side, cloud, supply-chain, availability, data isolation, protocols, desktop/mobile) |
-| `references/community-findings-checklist.md` | 16 | real practitioner-reported patterns |
-| `references/systems-checklist.md` | 111 | backend/distributed-systems meme list |
-| `references/default-checklist.md` | ~100 | general engineering best practices, no security framing |
+| `references/launch-security-checklist.md` | 38 | Widely shared pre-launch web-app security checklist, plus additions |
+| `references/agent-security-checklist.md` | 64 | Adapted from Cloudflare's [security-audit-skill](https://github.com/cloudflare/security-audit-skill) (core attack patterns + AI/LLM) |
+| `references/extended-attack-domains.md` | 90 | Adapted from the rest of Cloudflare's security-audit-skill (web/auth, client-side, cloud, supply chain, availability, data isolation, protocols, desktop/mobile) |
+| `references/community-findings-checklist.md` | 16 | Real incidents reported by practitioners (agent memory leaks, MCP credentials, WAF bypass, logging leaks, …) |
+| `references/systems-checklist.md` | 111 | Backend and distributed-systems engineering concepts |
+| `references/default-checklist.md` | ~100 | General engineering best practices |
 
-The security lists split into two tiers: a "security audit" default
-(launch-security + agent-security, 102 items) and an opt-in "deep audit"
-(adds extended-attack-domains + community-findings, 208 items total) — a
-live test showed running everything by default was too heavy for a quick
-ask.
+Security audits run in two tiers:
 
-Output is always four buckets: already covered (with `file:line` proof),
-genuinely worth fixing, unverified, or not applicable (with the specific
-architectural reason).
+- **Security audit** (default): launch + agent-security lists, 102 items.
+- **Deep security audit** (opt-in): adds extended domains + community
+  findings, 208 items.
+
+You can also paste or show your own checklist, as text or an image, and it is
+used instead.
+
+## How it works
+
+1. **Asks which checklist to run**, unless you already named one or provided
+   your own.
+2. **Reads the project first**: stack, architecture, `CLAUDE.md`/`README`, and
+   any earlier security reports and recorded decisions, so known issues aren't
+   re-reported as new.
+3. **Investigates each item in the real code**, grouped by area. Large lists
+   are split across parallel subagents that all return a fixed verdict format.
+4. **Re-verifies every gap before reporting it**: the whole code path,
+   including callers, middleware and proxy config, not just the cited line. It
+   also checks any proposed fix against real data.
+5. **Sorts every item into four buckets**: covered, worth fixing, unverified,
+   or not applicable (with the architectural reason). Risks the owner
+   deliberately accepted aren't reported as bugs.
+6. **Writes the findings** where the project already keeps its audit reports
+   (for example `docs/security-*.md`), so the next audit can build on them.
+
+## Example output
+
+Illustrative:
+
+```
+## Already covered
+L-1  HSTS — max-age=63072000; includeSubDomains; preload [deploy/nginx/nginx.conf:47]
+L-5  User enumeration — constant-time dummy hash, identical error message [auth_service.py:25-33]
+
+## Worth fixing
+A-38 Race in winner selection — check-then-act with no row lock [quote_service.py:513]
+C-15 loguru diagnose=True — local variables (incl. an API key) can reach logs [core/log.py:69]
+
+## Unverified
+C-9  Origin reachable without the CDN? — firewall rules live only on the host; run `iptables -S DOCKER-USER`
+
+## Not applicable
+L-7  Payment webhooks — no payment gateway in this project
+```
+
+Start with: A-38 — directly exploitable by two concurrent requests.
 
 ## Install
+
+For all projects:
 
 ```bash
 cd ~/.claude/skills
 git clone https://github.com/abtindaa/checklist-audit.git
 ```
 
-Or scope it to one project instead of all of them:
+For one project only:
 
 ```bash
 cd your-project
@@ -56,6 +92,8 @@ git clone https://github.com/abtindaa/checklist-audit.git .claude/skills/checkli
 ```
 
 ## Usage
+
+In Claude Code, inside your project:
 
 ```
 security audit this project
@@ -69,10 +107,35 @@ security audit this project
 what best practices are we missing
 ```
 
-Or paste/show your own checklist and ask "do we have this."
+Or paste/show your own checklist and ask "do we have this?" See
+[SKILL.md](SKILL.md) for the full workflow and decision rules.
 
-See [SKILL.md](SKILL.md) for the full workflow and decision logic.
+## Requirements
+
+- Claude Code with access to your project's source.
+- Subagent support (the Agent tool) is recommended. Lists over ~40 items, such
+  as the deep audit, are split across parallel subagents.
+- Works with any stack: Python, JS/TS, Go, and others.
+
+## Limitations
+
+- This is a **source-level audit**, not a penetration test. It doesn't send
+  traffic to your services or exploit anything.
+- Facts outside the repository can't be confirmed from code, so they are
+  reported as **unverified** with the exact check to run. Examples: host
+  firewall rules, CDN settings, production environment variables.
+- Results depend on what the checklists cover. A clean report means these
+  items were checked, not that the project is secure in every respect.
+
+## Contributing
+
+Issues and pull requests are welcome, especially:
+
+- New checklist items grounded in a real incident.
+- Reports of false positives or false negatives from real runs.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). The two Cloudflare-derived lists keep Cloudflare's MIT copyright notice.
+MIT — see [LICENSE](LICENSE). The two lists adapted from Cloudflare's
+security-audit-skill keep Cloudflare's MIT copyright notice; see
+[NOTICE](NOTICE).

@@ -1,0 +1,13 @@
+checklist-audit
+Copyright (c) 2026 abtindaa — MIT License (see LICENSE)
+
+This project includes material adapted from third-party work:
+
+references/agent-security-checklist.md
+references/extended-attack-domains.md
+
+  Adapted from cloudflare/security-audit-skill
+  https://github.com/cloudflare/security-audit-skill
+  Copyright (c) 2025-2026 Cloudflare, Inc.
+  Licensed under the MIT License. The MIT permission notice and warranty
+  disclaimer in LICENSE apply equally to this material.
