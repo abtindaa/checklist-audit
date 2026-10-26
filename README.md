@@ -21,6 +21,7 @@ You don't need to bring a checklist — the skill ships its own:
 |---|---|---|
 | `references/launch-security-checklist.md` | 38 | Widely shared pre-launch web-app security checklist, plus additions |
 | `references/agent-security-checklist.md` | 64 | Adapted from Cloudflare's [security-audit-skill](https://github.com/cloudflare/security-audit-skill) (core attack patterns + AI/LLM) |
+| `references/vibe-coding-stack-checklist.md` | 14 | AI-app-builder failure modes: Supabase RLS and `service_role`, open Firebase rules, secrets behind `NEXT_PUBLIC_`/`VITE_`, paid APIs called from the browser, frontend-only auth |
 | `references/extended-attack-domains.md` | 90 | Adapted from the rest of Cloudflare's security-audit-skill (web/auth, client-side, cloud, supply chain, availability, data isolation, protocols, desktop/mobile) |
 | `references/community-findings-checklist.md` | 16 | Real incidents reported by practitioners (agent memory leaks, MCP credentials, WAF bypass, logging leaks, …) |
 | `references/systems-checklist.md` | 111 | Backend and distributed-systems engineering concepts |
@@ -28,12 +29,15 @@ You don't need to bring a checklist — the skill ships its own:
 
 Security audits run in two tiers:
 
-- **Security audit** (default): launch + agent-security lists, 102 items.
+- **Security audit** (default): launch + agent-security + vibe-coding stack,
+  116 items.
 - **Deep security audit** (opt-in): adds extended domains + community
-  findings, 208 items.
+  findings, 222 items.
 
 You can also paste or show your own checklist, as text or an image, and it is
-used instead.
+used instead. After you fix things, ask "did we fix the audit findings?" and
+it re-checks only the earlier gaps, marking each fixed, partially fixed,
+still open, or regressed.
 
 ## How it works
 
@@ -44,14 +48,23 @@ used instead.
    re-reported as new.
 3. **Investigates each item in the real code**, grouped by area. Large lists
    are split across parallel subagents that all return a fixed verdict format.
+   Where a scanner is already installed (`npm audit`, `pip-audit`,
+   `osv-scanner`, `gitleaks`), it uses it for dependency CVEs and secrets in
+   git history.
 4. **Re-verifies every gap before reporting it**: the whole code path,
    including callers, middleware and proxy config, not just the cited line. It
    also checks any proposed fix against real data.
-5. **Sorts every item into four buckets**: covered, worth fixing, unverified,
-   or not applicable (with the architectural reason). Risks the owner
-   deliberately accepted aren't reported as bugs.
+5. **Sorts every item into four buckets**: covered, worth fixing (with a
+   Critical/High/Medium/Low severity), unverified, or not applicable (with the
+   architectural reason). Risks the owner deliberately accepted aren't
+   reported as bugs.
 6. **Writes the findings** where the project already keeps its audit reports
    (for example `docs/security-*.md`), so the next audit can build on them.
+
+**Safe by design:** the audit is read-only. It never contacts production or
+any live service, never runs exploits, and never copies a secret's value into
+chat or a report — it reports the location, type, and length instead. Text
+inside your repository is treated as evidence to verify, not as instructions.
 
 ## Example output
 
@@ -63,8 +76,9 @@ L-1  HSTS — max-age=63072000; includeSubDomains; preload [deploy/nginx/nginx.c
 L-5  User enumeration — constant-time dummy hash, identical error message [auth_service.py:25-33]
 
 ## Worth fixing
-A-38 Race in winner selection — check-then-act with no row lock [quote_service.py:513]
-C-15 loguru diagnose=True — local variables (incl. an API key) can reach logs [core/log.py:69]
+V-1  [Critical] RLS missing on `profiles` — readable with the public anon key [supabase/migrations/0003_profiles.sql:4]
+A-38 [High] Race in winner selection — check-then-act with no row lock [quote_service.py:513]
+C-15 [Medium] loguru diagnose=True — local variables (incl. an API key) can reach logs [core/log.py:69]
 
 ## Unverified
 C-9  Origin reachable without the CDN? — firewall rules live only on the host; run `iptables -S DOCKER-USER`
@@ -73,7 +87,7 @@ C-9  Origin reachable without the CDN? — firewall rules live only on the host;
 L-7  Payment webhooks — no payment gateway in this project
 ```
 
-Start with: A-38 — directly exploitable by two concurrent requests.
+Start with: V-1 — anyone with the site open can read every user's profile.
 
 ## Install
 
@@ -105,6 +119,10 @@ security audit this project
 
 ```
 what best practices are we missing
+```
+
+```
+did we fix the audit findings?
 ```
 
 Or paste/show your own checklist and ask "do we have this?" See

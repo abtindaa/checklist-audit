@@ -135,7 +135,7 @@ scoped authorization, isolation, and constrained credentials count.
 
 ## Notes for auditing this particular list
 
-Unlike the other three bundled lists, most items here are *patterns to trace*,
+Unlike the feature-style bundled lists, most items here are *patterns to trace*,
 not *features to grep for*. "SQL injection" isn't verified by finding a
 parameterized-query call somewhere — it's verified by picking an actual
 user-controlled input and following it to its actual sink, then checking every
