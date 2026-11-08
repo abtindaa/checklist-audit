@@ -1,4 +1,4 @@
-# Extended attack-domain checklist (90 items)
+# Extended attack-domain checklist (93 items)
 
 Source: the seven remaining domain files from Cloudflare's
 [security-audit-skill](https://github.com/cloudflare/security-audit-skill)
@@ -15,7 +15,7 @@ out of scope for the kind of application-layer projects this skill audits. If
 a future audit target is a native binary or kernel module, fetch that file
 directly rather than bolting it onto this one.
 
-At 90 items this is over the ~40 threshold — parallel-subagent branch of
+At 93 items this is over the ~40 threshold — parallel-subagent branch of
 step 4, one agent per domain below. **Unlike `agent-security-checklist.md`,
 several of these domains only apply given a specific architecture.** Check
 applicability honestly before assigning an agent to a domain — don't skip a
@@ -88,8 +88,8 @@ Any project with sessions, JWT, OAuth/OIDC, SAML, API keys, or mTLS.
 49. CI workflow runs untrusted PR/fork code with access to protected secrets
 50. Attacker-controlled branch name/commit message/issue text reaches a shell command in CI
 51. A lower-trust CI job's cache or artifact is consumed and executed by a higher-trust job
-52. Release/signature verification refers to a mutable tag/name instead of an immutable digest
-53. An updater verifies payload signature but not version/platform/channel/rollback binding
+52. Release/signature verification refers to a mutable tag/name instead of an immutable digest — includes publish scripts that download an arbitrary URL and release it under a hash they computed themselves instead of pinning and verifying the signing certificate (`apksigner verify --print-certs`, codesign, cosign)
+53. An updater verifies payload signature but not version/platform/channel/rollback binding — includes the update manifest itself (version pins, minimum-version, download URLs) being served unsigned: whoever controls the server can force a blocking "update required" screen or point new installs at another binary
 54. A plugin/extension gains host authority beyond its declared scope
 
 ## 5. Resource exhaustion and availability (items 55–64) — applies to any endpoint taking user input
@@ -101,7 +101,7 @@ Any project with sessions, JWT, OAuth/OIDC, SAML, API keys, or mTLS.
 59. Cancelled or timed-out requests leave DB/worker/network operations still running
 60. Expensive work (crypto, parsing, external calls) happens before authentication or a rate gate
 61. Quota accounting keyed on a spoofable dimension (IP, header) lets one principal escape its budget
-62. Untrusted input reaches a process-killing panic/unhandled exception in a shared worker
+62. Untrusted input reaches a process-killing panic/unhandled exception in a shared worker — includes exceptions a dependency raises outside its own error hierarchy (a parser letting `RecursionError` escape a deeply nested header past `except LibraryError`, giving a pre-auth 500); map each scanner advisory to the exact `except` clauses around the call, don't only bump the version
 63. Retries on failure have no jitter/ceiling — can synchronize into a retry storm
 64. One malformed message blocks an entire shared queue or partition (head-of-line blocking)
 
@@ -139,6 +139,27 @@ Any project with sessions, JWT, OAuth/OIDC, SAML, API keys, or mTLS.
 88. A privileged helper (sudo/polkit/UAC) trusts a caller-supplied path/command with no independent validation
 89. TOCTOU on a privileged file operation — checked path replaced by a symlink before use
 90. A credential/token file is readable by another app or OS user with less authority
+
+## 9. Additions from real audits (items 91–93)
+
+Appended rather than slotted into domains 4 and 6, so the numbers in earlier
+reports stay stable. Items 91–92 belong with domain 6 (multi-tenant projects
+only); item 93 belongs with domain 4 (projects that ship signed releases).
+Both came from a real audit of a multi-tenant FastAPI + React + Expo project.
+
+91. A global/shared table with no tenant column (templates, presets, settings,
+    lookup data) that tenant-scoped roles can write — a project- or tenant-bound
+    admin edits data that other tenants' future records inherit. Isolation
+    tests usually only check reads, so list every table without a tenant/owner
+    column and who can write to it
+92. A suggestion/autocomplete/"distinct values" endpoint built from
+    user-typed free text without tenant scoping — a small cross-tenant leak,
+    and a channel for injecting strings that other tenants see
+93. Release signing keys (OTA/code-signing, APK keystore, codesign, GPG,
+    cosign) are encrypted/passphrase-protected or held in a KMS/HSM, scoped to
+    release use, and unreadable by the AI agent — check outside the repo too
+    (`~/.<app>-ota`, keystore files inside the working tree). Anyone who can
+    read an unencrypted key can push code to every installed copy
 
 ## Notes for auditing this particular list
 

@@ -74,7 +74,7 @@ easy to miss.
 ## 6. Business logic (items 37–42)
 
 37. State machine allows skipping steps or reaching an invalid state
-38. Race condition with financial/business impact (double-spend, double-approve)
+38. Race condition with financial/business impact (double-spend, double-approve) — including a lock helper that exists but isn't used on the hot path: for every `*_for_update`/lock helper the codebase defines, list the mutating callers that bypass it
 39. Negative, zero, or overflowed quantities accepted
 40. One operation bypasses a restriction enforced on a different operation for the same effect
 41. Data from storage/config trusted as "already validated" without re-checking
@@ -91,7 +91,7 @@ easy to miss.
 
 ## 8. Chained vulnerabilities and trust boundaries (items 49–50)
 
-49. Component A validates input; component B assumes a different guarantee (truncation, type coercion)
+49. Component A validates input; component B assumes a different guarantee (truncation, type coercion) — e.g. a length limit enforced at one entry point but not in the shared primitive underneath (bcrypt's 72 bytes checked in login only); every other caller still breaks, even when an earlier audit marked it fixed
 50. Token/API-key/capability gains broader authority after delegation or refresh
 
 ## 9. The wildcard move

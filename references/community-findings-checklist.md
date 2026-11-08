@@ -107,7 +107,10 @@ Applies to projects using row-level security or raw SQL functions.
     configs, and — easy to miss because it's the *default* — loguru, whose
     `diagnose` is `True` unless `logger.add(..., diagnose=False)` or
     `LOGURU_DIAGNOSE=0` is set; also check that the default stderr sink was
-    removed) — prints the contents of every local variable in a crashing
+    removed — review every sink, not just the one you configured: setting
+    `diagnose=False` on the file sink while the built-in stderr sink stays
+    attached still leaks into container logs, so call `logger.remove()`
+    first) — prints the contents of every local variable in a crashing
     frame, including ones that only ever held a secret in memory and were
     never meant to be logged. Trace one concrete path: an `exc_info=True` /
     `logger.exception` call in a frame whose locals hold a key or password.

@@ -14,8 +14,14 @@ lives, work group by group, no subagents needed.
 ## Transport & headers (1, 21, 29)
 
 1. Add HSTS
-21. Set CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy headers
-29. Automate TLS certificate renewal (not just require HTTPS)
+21. Set CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+    headers — and confirm the CSP doesn't break the app's own features: grep
+    `createObjectURL`, `blob:`, `data:`, workers and wasm against the
+    directives. A CSP that only breaks production (e.g. `img-src` without
+    `blob:` kills image previews) gets loosened blindly by whoever hits it
+29. Automate TLS certificate renewal (not just require HTTPS). An "OCSP
+    stapling" check is N/A for Let's Encrypt certificates — it retired OCSP in
+    2025 (must-staple Jan 30, responders Aug 6, per its published schedule)
 
 ## Session & auth (2, 3, 4, 5, 17, 19, 24, 27, 31, 32)
 
@@ -29,7 +35,12 @@ lives, work group by group, no subagents needed.
 27. Use short-lived access tokens with a separate refresh token, not a
     long-lived JWT
 31. Hash passwords with a slow memory-hard KDF (bcrypt/argon2/scrypt), not a
-    fast general-purpose hash (MD5, SHA1, unsalted SHA256) or plaintext
+    fast general-purpose hash (MD5, SHA1, unsalted SHA256) or plaintext — and
+    enforce the primitive's input limits inside the hash/verify wrapper
+    itself, not at one caller. bcrypt rejects or truncates past 72 bytes; a
+    guard added only to login leaves change-, reset- and create-password
+    crashing with a 500 and the plaintext in the traceback. Grep every caller
+    of the hash function
 32. Check new/changed passwords against a known-breach corpus (Pwned
     Passwords range API or an offline equivalent) before accepting them
 
@@ -60,7 +71,12 @@ lives, work group by group, no subagents needed.
 36. If an AI coding agent has shell/filesystem access to this repo, confirm it
     can't reach production credentials, production data, or push/deploy
     unreviewed — not the app's own runtime AI surface, but the development
-    tooling around it
+    tooling around it. Check what is *reachable*, not only what is
+    committed: production DB dumps/exports/backups in the working tree, and
+    signing keys or keystores (OTA, APK, codesign, GPG, cosign), including
+    ones outside the repo such as `~/.<app>-ota`. Gitignored is not
+    unreachable: the agent, and any third-party relay its context passes
+    through, can read whatever sits in its working directories
 37. If the app has a code-interpreter-style feature (executes model-generated
     code as a product feature), confirm it runs sandboxed/isolated with no
     more privilege than the host process, not just "the coding agent is safe"
@@ -86,7 +102,9 @@ lives, work group by group, no subagents needed.
 
 25. No secrets committed to git history (.env, API keys, tokens)
 26. Automated dependency vulnerability scanning (npm audit / pip-audit /
-    Dependabot or equivalent)
+    Dependabot or equivalent) — and the result actually gates deploy. Read the
+    deploy path: if it is a direct push or a manual script that never waits
+    on CI, a red scan blocks nothing
 35. Dependency slopsquatting — a package name was hallucinated by an LLM
     (dependency selection, a copied tutorial, a coding agent) and installed as
     written; check for lockfile entries that are unusually obscure, added

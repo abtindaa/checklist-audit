@@ -21,8 +21,8 @@ You don't need to bring a checklist — the skill ships its own:
 |---|---|---|
 | `references/launch-security-checklist.md` | 38 | Widely shared pre-launch web-app security checklist, plus additions |
 | `references/agent-security-checklist.md` | 64 | Adapted from Cloudflare's [security-audit-skill](https://github.com/cloudflare/security-audit-skill) (core attack patterns + AI/LLM) |
-| `references/vibe-coding-stack-checklist.md` | 14 | AI-app-builder failure modes: Supabase RLS and `service_role`, open Firebase rules, secrets behind `NEXT_PUBLIC_`/`VITE_`, paid APIs called from the browser, frontend-only auth |
-| `references/extended-attack-domains.md` | 90 | Adapted from the rest of Cloudflare's security-audit-skill (web/auth, client-side, cloud, supply chain, availability, data isolation, protocols, desktop/mobile) |
+| `references/vibe-coding-stack-checklist.md` | 18 | AI-app-builder failure modes: Supabase RLS and `service_role`, open Firebase rules, secrets behind `NEXT_PUBLIC_`/`VITE_`, paid APIs called from the browser, frontend-only auth, Expo/mobile (OTA signing, logout vs expiry) |
+| `references/extended-attack-domains.md` | 93 | Adapted from the rest of Cloudflare's security-audit-skill (web/auth, client-side, cloud, supply chain, availability, data isolation, protocols, desktop/mobile) |
 | `references/community-findings-checklist.md` | 16 | Real incidents reported by practitioners (agent memory leaks, MCP credentials, WAF bypass, logging leaks, …) |
 | `references/systems-checklist.md` | 111 | Backend and distributed-systems engineering concepts |
 | `references/default-checklist.md` | ~100 | General engineering best practices |
@@ -30,9 +30,9 @@ You don't need to bring a checklist — the skill ships its own:
 Security audits run in two tiers:
 
 - **Security audit** (default): launch + agent-security + vibe-coding stack,
-  116 items.
+  120 items.
 - **Deep security audit** (opt-in): adds extended domains + community
-  findings, 222 items.
+  findings, 229 items.
 
 You can also paste or show your own checklist, as text or an image, and it is
 used instead. After you fix things, ask "did we fix the audit findings?" and

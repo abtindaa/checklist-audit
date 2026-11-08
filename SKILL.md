@@ -1,6 +1,6 @@
 ---
 name: checklist-audit
-description: Security audit for vibe-coded and AI-assisted projects, checked against the actual code with file:line evidence, not general knowledge. Built-in checklists — pre-launch security (38), Cloudflare attack patterns (64), vibe-coding stack (14: Supabase/Firebase rules, secrets in client bundles, frontend-only auth), extended attack domains (90), community findings (16), plus systems and general-engineering lists. No list needed; a pasted or shown checklist/image takes priority. Triage: covered, gap (with severity), unverified, not applicable. Use when the user asks for a security audit or review ("security audit this project", "is my app safe to launch", "پروژه رو از نظر امنیتی چک کن", "چی از نظر امنیتی کم داریم"), a best-practices audit ("چک کن چی کم داریم"), a re-check after fixes ("did we fix the audit findings"), or shows their own list ("do we have this") — even without naming this skill. Not for a single diff or PR (use code-review).
+description: Security audit for vibe-coded and AI-assisted projects, checked against the actual code with file:line evidence, not general knowledge. Built-in checklists — pre-launch security (38), Cloudflare attack patterns (64), vibe-coding stack (18: Supabase/Firebase rules, secrets in client bundles, frontend-only auth, Expo), extended attack domains (93), community findings (16), plus systems and general-engineering lists. No list needed; a pasted or shown checklist/image takes priority. Triage: covered, gap (with severity), unverified, not applicable. Use when the user asks for a security audit or review ("security audit this project", "is my app safe to launch", "پروژه رو از نظر امنیتی چک کن", "چی از نظر امنیتی کم داریم"), a best-practices audit ("چک کن چی کم داریم"), a re-check after fixes ("did we fix the audit findings"), or shows their own list ("do we have this") — even without naming this skill. Not for a single diff or PR (use code-review).
 ---
 
 # Checklist audit
@@ -67,9 +67,9 @@ against them *is* the default way this skill operates.
 
 The five security-flavored lists split into two tiers (see step 1's ask):
 `launch-security-checklist.md` (38), `agent-security-checklist.md` (64) and
-`vibe-coding-stack-checklist.md` (14) are the default "security audit" — 116
-items. `extended-attack-domains.md` (90) and `community-findings-checklist.md`
-(16) are the "deep audit" add-on — 222 items total, meaningfully heavier and
+`vibe-coding-stack-checklist.md` (18) are the default "security audit" — 120
+items. `extended-attack-domains.md` (93) and `community-findings-checklist.md`
+(16) are the "deep audit" add-on — 229 items total, meaningfully heavier and
 opt-in rather than the default.
 
 - `references/launch-security-checklist.md` — the 38-item pre-launch web-app
@@ -92,17 +92,18 @@ opt-in rather than the default.
   per step 7 — a missing SDK package proves nothing, because real runs have
   found LLMs called over plain HTTP. Over the ~40 threshold —
   parallel-subagent branch of step 4, one agent per group in the file.
-- `references/vibe-coding-stack-checklist.md` — 14 items for the failure
+- `references/vibe-coding-stack-checklist.md` — 18 items for the failure
   modes most specific to AI-app-builder projects: Supabase RLS and
   `service_role` exposure, open Firebase rules, secrets behind public env
   prefixes (`NEXT_PUBLIC_`, `VITE_`, …), paid APIs called from the browser,
   authorization enforced only in the frontend or only in Next.js middleware,
-  whole-row API responses, public upload buckets, leftover seed accounts, and
-  unauthenticated edge functions. Mostly stack-gated: detect Supabase/
-  Firebase/Next.js/Vite from dependencies and imports first, and use that
-  detection as the reason for any N/A group. Part of the default security
-  audit.
-- `references/extended-attack-domains.md` — the 90-item domain checklist
+  whole-row API responses, public upload buckets, leftover seed accounts,
+  unauthenticated edge functions, and a mobile/Expo group (OTA code signing,
+  session expiry vs sign-out, stale native build dirs, OTA rollback).
+  Mostly stack-gated: detect Supabase/Firebase/Next.js/Vite/Expo from
+  dependencies and imports first, and use that detection as the reason for
+  any N/A group. Part of the default security audit.
+- `references/extended-attack-domains.md` — the 93-item domain checklist
   covering the rest of Cloudflare's `security-audit-skill`: web protocol/auth,
   client-side/browser, cloud/deployment, supply-chain/CI, resource
   exhaustion/availability, data isolation (multi-tenant), protocols/RPC/
@@ -110,8 +111,11 @@ opt-in rather than the default.
   are broadly applicable to most web/cloud projects; the last two (protocols/
   messaging, items 75–82, and desktop/mobile/IPC, items 83–90) apply only if
   that architecture is actually present — check the dependency tree and build
-  target before ruling a domain in or out. Over the ~40 threshold —
-  parallel-subagent branch of step 4, one agent per domain.
+  target before ruling a domain in or out. A short appendix (items 91–93:
+  global tables writable by tenant roles, cross-tenant suggestion endpoints,
+  release-signing-key protection) came from a real audit; the first two are
+  multi-tenant-only. Over the ~40 threshold — parallel-subagent branch of
+  step 4, one agent per domain.
 - `references/systems-checklist.md` — the 111-item backend/distributed-systems
   list ("who's gonna tell vibe coders about… Rate Limiting, Caching,
   Kubernetes, CAP Theorem…"). Mostly infra/architecture concepts, several
@@ -155,7 +159,9 @@ list in the same session, check overlapping items once and reuse the citation
    items as the list. For each one, re-run step 5 and step 6 against the
    current code and give it one status:
    - **fixed** — cite the `file:line` of the fix, and confirm the fix covers
-     the whole path the original finding described, not just the cited line;
+     the whole path the original finding described, not just the cited line.
+     "Fixed" written in a doc, a commit message, or `CLAUDE.md` doesn't count
+     as evidence; the code does;
    - **partially fixed** — say which path is still open;
    - **still open**;
    - **regressed** — it was fixed in an earlier re-audit and has broken again.
@@ -167,23 +173,23 @@ list in the same session, check overlapping items once and reuse the citation
    **Otherwise, before doing anything else, explain the bundled lists and ask
    which to run.** Briefly state in the chat that this skill ships seven
    built-in checklists rather than needing one from the user, name them
-   (38-item pre-launch security, 64-item Cloudflare attack patterns, 14-item
-   vibe-coding stack, 90-item extended attack domains, 16-item community
+   (38-item pre-launch security, 64-item Cloudflare attack patterns, 18-item
+   vibe-coding stack, 93-item extended attack domains, 16-item community
    findings, 111-item backend/systems, general engineering), and use
    `AskUserQuestion` (allow multiple selection) to let the user pick.
    Pre-select nothing — recommend in the option description, don't decide for
    them:
-   - "Security audit (recommended for most asks)" — the 38 + 64 + 14 lists
-     (116 items). This is the default weight: enough to catch real gaps
+   - "Security audit (recommended for most asks)" — the 38 + 64 + 18 lists
+     (120 items). This is the default weight: enough to catch real gaps
      without the run turning into a marathon. A live test on a real 30-item
      run alone took a meaningful amount of investigation; running all the
      security lists by default made the "just audit my project" case too
      heavy, so the wider lists moved to their own tier below.
-   - "Deep security audit" — adds `extended-attack-domains.md` (90) and
-     `community-findings-checklist.md` (16) on top of the 116 above (222
+   - "Deep security audit" — adds `extended-attack-domains.md` (93) and
+     `community-findings-checklist.md` (16) on top of the 120 above (229
      items total). Note in the option description that this is significantly
      heavier and better suited to a dedicated security review than a quick
-     check — the 90-item list's architecture-gated domains still get ruled
+     check — the 93-item list's architecture-gated domains still get ruled
      in/out individually during investigation, not skipped wholesale.
    - "General engineering audit" — the default-checklist
    - "Full backend/systems audit" — the 111-item list, note it's mostly
@@ -224,7 +230,12 @@ list in the same session, check overlapping items once and reuse the citation
    which gaps are already known (report those as "still open since <date>",
    not as a new discovery), which were fixed (verify the fix is still in the
    code — fixes regress), and which risks were deliberately accepted (see
-   step 7). An audit that re-reports last month's known finding as new, or
+   step 7). A "fixed" claim in a doc or `CLAUDE.md` is a lead, not evidence:
+   one real project's docs overstated a fix that was only half done. Also
+   check whether the audit history itself is version-controlled
+   (`git check-ignore -v <folder>`). If it's gitignored, say so in the report
+   — those records can vanish with the machine, and their provenance can't be
+   checked — and recommend committing them. An audit that re-reports last month's known finding as new, or
    flags an owner-accepted trade-off as a bug, costs the user trust in every
    other line of the report.
 
@@ -295,6 +306,15 @@ list in the same session, check overlapping items once and reuse the citation
    no tool is available, mark the item "unverified" and include the exact
    command for the owner to run.
 
+   **Never take a severity from scanner volume, labels or CVSS.** In a real
+   run a scanner reported 61 locked vulnerabilities, labelled HIGH; reading
+   the advisories showed exactly one was reachable from this code, at Medium.
+   For each hit, read the advisory, find the affected function or condition,
+   and grep whether this code reaches it. When the advisory is about an
+   exception or crash (a parser raising outside its own error hierarchy, say),
+   map it to the `except` clauses around the call: bumping the version
+   doesn't fix a handler that only catches the library's own error type.
+
 6. **Verify every gap yourself before reporting it.** A subagent's summary is
    what it intended to find, not proof — and a `file:line` citation proves it
    read *a* line, not enough of them. In a real run, 3 of 6 reported gaps were
@@ -322,7 +342,9 @@ list in the same session, check overlapping items once and reuse the citation
    because `/` is the Persian decimal separator. Before suggesting a new
    constraint, look at what the existing values actually are (sample the
    data, or the fixtures/seed if there's no DB access) and at locale
-   conventions. Apply validation to input schemas, never to response models —
+   conventions — a length cap should sit just above the longest real value
+   (the longest category name in one project was 28 characters, so the cap
+   became 50), not at a round number picked in the abstract. Apply validation to input schemas, never to response models —
    on a response model it stops the API serving rows that already exist.
 
 7. **Sort into exactly four buckets.** An item can only end up in "not

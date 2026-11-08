@@ -1,4 +1,4 @@
-# Vibe-coding stack checklist (14 items)
+# Vibe-coding stack checklist (18 items)
 
 The failure modes most specific to projects built quickly with AI app
 builders and scaffolds — Supabase/Firebase backends, Next.js/Vite frontends,
@@ -15,7 +15,7 @@ detection as the architectural reason when a group is N/A. A project with no
 BaaS and a server-rendered backend will legitimately mark several of these
 N/A.
 
-Use prefix `V-`. At 14 items this list is small on its own, but it runs as
+Use prefix `V-`. At 18 items this list is small on its own, but it runs as
 part of the default security audit alongside the 38 + 64 lists.
 
 ## Backend-as-a-service: Supabase (V-1 – V-3)
@@ -97,6 +97,34 @@ part of the default security audit alongside the 38 + 64 lists.
     edge functions deployed with `--no-verify-jwt`, Vercel/Netlify functions
     with no session check, and webhook endpoints with no signature check are
     public entry points to backend authority.
+
+## Mobile / Expo (V-15 – V-18) — only if the project ships an Expo or React Native app
+
+Detect `expo`, `expo-updates`, `react-native` in the dependency file; with none
+of them, this whole group is N/A. Items 15–18 came from a real audit of an
+Expo + FastAPI project.
+
+15. **OTA updates are code-signed, and the signing key is protected.** Check
+    `app.json`/`app.config.*` for `updates.codeSigningCertificate` and
+    `codeSigningMetadata`. Without signing, whoever controls the update
+    server or its DNS can push code to every install. Then confirm the private
+    key is encrypted, outside the repo, and unreadable by the agent (see E-93).
+16. **Session expiry behaves like sign-out.** Compare the 401/expiry handler
+    with the explicit sign-out handler. Both must clear the token *and* cached
+    API data, profile, and offline stores (AsyncStorage, SecureStore, SQLite,
+    query caches). A handler that clears only the token leaves the previous
+    user's data on the device for the next person to open.
+17. **Generated native directories aren't stale.** A gitignored `android/` or
+    `ios/` prebuild can lag the config plugins — `allowBackup=true`,
+    `usesCleartextTraffic`, no network security config or certificate pinning —
+    while cloud builds regenerate it correctly, so a *local* release build ships
+    without the protections. Compare the generated manifest/plist with what the
+    config plugins produce, or regenerate it.
+18. **The documented OTA rollback really rolls back.** An update client can
+    keep a newer update over an older one, so a runbook's "rollback" step may
+    do nothing for devices that already updated. Test it on an updated device,
+    or document the fallback that does work — republishing the last good bundle
+    as a *new* update. Don't assume the incident procedure works.
 
 ## Notes for auditing this particular list
 
